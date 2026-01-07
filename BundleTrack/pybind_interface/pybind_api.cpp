@@ -35,7 +35,7 @@ PYBIND11_MODULE(my_cpp, m)
     })
     ;
 
-  m.def("computeCovisibility", &computeCovisibility);
+  m.def("compute_covisibility", &compute_covisibility);
   m.def("YamlLoadFile", [](const std::string& filename) -> std::shared_ptr<YAML::Node> {
     try {
       if (filename.empty()) {

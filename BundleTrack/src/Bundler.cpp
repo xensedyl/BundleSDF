@@ -180,7 +180,7 @@ void Bundler::processNewFrame(std::shared_ptr<Frame> frame)
       std::vector<float> visibles;
       for (const auto &kf:_keyframes)
       {
-        float visible = computeCovisibility(frame, kf);
+        float visible = compute_covisibility(frame, kf);
         visibles.push_back(visible);
       }
       std::vector<int> ids = Utils::vectorArgsort(visibles,false);
@@ -311,7 +311,7 @@ bool Bundler::checkAndAddKeyframe(std::shared_ptr<Frame> frame)
   for (int i=0;i<_keyframes.size();i++)
   {
     const auto &kf = _keyframes[i];
-    float visible = computeCovisibility(_newframe, kf);
+    float visible = compute_covisibility(_newframe, kf);
     if (visible>min_visible)
     {
       SPDLOG("frame {} not selected as keyframe since share visible {} with frame {}", _newframe->_id_str, visible, kf->_id_str);
@@ -510,8 +510,8 @@ void Bundler::selectKeyFramesForBA()
     for (int i=0;i<_keyframes.size();i++)
     {
       const auto &kf = _keyframes[i];
-      // float visible = computeCovisibilityCuda(_newframe, kf);
-      float visible = computeCovisibility(_newframe, kf);
+      // float visible = compute_covisibilityCuda(_newframe, kf);
+      float visible = compute_covisibility(_newframe, kf);
       visibles[i] = visible;
       // SPDLOG("{} and {} visible: {}", _newframe->_id_str, kf->_id_str, visible);
     }
@@ -542,7 +542,7 @@ void Bundler::selectKeyFramesForBA()
         float visible_sum = 0;
         for (const auto &f:frames)
         {
-          float visible = computeCovisibility(kf,f);
+          float visible = compute_covisibility(kf,f);
           visible_sum += visible;
         }
         if (visible_sum>best_visible)
@@ -790,7 +790,7 @@ std::vector<FramePair> Bundler::getFeatureMatchPairs(std::vector<std::shared_ptr
       const auto &fB = frames[i];
       if (_fm->_matches.find({fA, fB})==_fm->_matches.end() && fA->_pose_in_model!=Eigen::Matrix4f::Identity())
       {
-        float visible = computeCovisibility(fA, fB);
+        float visible = compute_covisibility(fA, fB);
         SPDLOG("frame {} and {} visible={}",fA->_id_str,fB->_id_str,visible);
         if (visible<(*yml)["bundle"]["non_neighbor_min_visible"].as<float>())
         {

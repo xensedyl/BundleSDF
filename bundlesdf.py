@@ -598,7 +598,7 @@ class BundleSdf:
     if len(matches)<min_match_with_ref:
       visibles = []
       for kf in self.bundler._keyframes:
-        visible = my_cpp.computeCovisibility(frame, kf)
+        visible = my_cpp.compute_covisibility(frame, kf)
         visibles.append(visible)
       visibles = np.array(visibles)
       ids = np.argsort(visibles)[::-1]
