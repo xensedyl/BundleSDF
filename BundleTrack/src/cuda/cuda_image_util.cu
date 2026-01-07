@@ -321,46 +321,74 @@ void Gaussian_filter_dmap(
 // Filter Depth Smoothed Edges
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void filterDepthSmoothedEdgesDevice(float* d_output, const float* d_input, const float4* d_normal, unsigned int width, unsigned int height, const float angle_thres, const float fx, const float fy, const float cx, const float cy)
+// Improved kernel with better readability, reusing intermediate variables, and clear structure
+__global__ void filter_dmap_smoothed_edges_kernel(
+    float* d_output,
+    const float* d_input,
+    const float4* d_normal,
+    unsigned int width,
+    unsigned int height,
+    float angle_thres,
+    float fx, float fy, float cx, float cy)
 {
-	const int u = blockIdx.x*blockDim.x + threadIdx.x;
-	const int v = blockIdx.y*blockDim.y + threadIdx.y;
+    int u = blockIdx.x * blockDim.x + threadIdx.x;
+    int v = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (u >= width || v >= height) return;
+    if (u >= width || v >= height) return;
 
-	const int pos = v*width+u;
-	float Z = d_input[pos];
-	if (Z<0.1) return;
+    int idx = v * width + u;
+    float depth = d_input[idx];
+    if (depth < 0.1f) return;
 
-	float X = (u-cx)*Z/fx;
-	float Y = (v-cy)*Z/fy;
-	float3 view_dir = make_float3(X,Y,Z);
-	view_dir = normalize(view_dir);
+    // Compute view direction (normalized)
+    float3 view_dir = make_float3(
+        (u - cx) * depth / fx,
+        (v - cy) * depth / fy,
+        depth
+    );
+    view_dir = normalize(view_dir);
 
-	float3 normal_dir = make_float3(d_normal[pos].x,d_normal[pos].y,d_normal[pos].z);
-	normal_dir = normalize(normal_dir);
-	float dot = normal_dir.x*view_dir.x + normal_dir.y*view_dir.y + normal_dir.z*view_dir.z;
-	float angle = acos(dot);    // [0,pi]
-	if (abs(angle-M_PI/2)<angle_thres)
-	{
-		d_output[pos] = 0;
-	}
-	else
-	{
-		d_output[pos] = d_input[pos];
-	}
+    // Compute normal direction (normalized)
+    float4 nrm = d_normal[idx];
+    float3 normal_dir = make_float3(nrm.x, nrm.y, nrm.z);
+    normal_dir = normalize(normal_dir);
 
+    // Compute angle between view direction and normal
+    float dot = fminf(fmaxf(dot(view_dir, normal_dir), -1.0f), 1.0f); // Clamp for safety
+    float angle = acosf(dot); // returns value in [0, pi]
+
+    // Suppress depth on edges
+    const float pi_2 = 1.5707963267948966f; // Precomputed pi/2
+    if (fabsf(angle - pi_2) < angle_thres) {
+        d_output[idx] = 0.0f;
+    } else {
+        d_output[idx] = depth;
+    }
 }
 
-void filterDepthSmoothedEdges(float* d_output, const float* d_input, const float4* d_normal, unsigned int width, unsigned int height, const float angle_thres, const float fx, const float fy, const float cx, const float cy)
+void filter_dmap_smoothed_edges(
+    float* d_output,
+    const float* d_input,
+    const float4* d_normal,
+    unsigned int width,
+    unsigned int height,
+    float angle_thres,
+    float fx, float fy, float cx, float cy)
 {
-	const dim3 gridSize((width + T_PER_BLOCK - 1) / T_PER_BLOCK, (height + T_PER_BLOCK - 1) / T_PER_BLOCK);
-	const dim3 blockSize(T_PER_BLOCK, T_PER_BLOCK);
+    dim3 blockSize(T_PER_BLOCK, T_PER_BLOCK);
+    dim3 gridSize(
+        (width + T_PER_BLOCK - 1) / T_PER_BLOCK,
+        (height + T_PER_BLOCK - 1) / T_PER_BLOCK
+    );
 
-	filterDepthSmoothedEdgesDevice << <gridSize, blockSize >> >(d_output, d_input, d_normal, width, height, angle_thres, fx,fy,cx,cy);
+    filter_dmap_smoothed_edges_kernel<<<gridSize, blockSize>>>(
+        d_output, d_input, d_normal, width, height,
+        angle_thres, fx, fy, cx, cy
+    );
+
 #ifdef DEBUG
-	cutilSafeCall(cudaDeviceSynchronize());
-	cutilCheckMsg(__FUNCTION__);
+    cutilSafeCall(cudaDeviceSynchronize());
+    cutilCheckMsg(__FUNCTION__);
 #endif
 }
 

@@ -287,7 +287,7 @@ void Frame::depthToCloudAndNormals()
   float *depth_tmp_gpu;
   cudaMalloc(&depth_tmp_gpu, n_pixels*sizeof(float));
   const float angle_thres = (*yml)["depth_processing"]["edge_normal_thres"].as<float>()/180.0*M_PI;
-  cuda_image_util::filterDepthSmoothedEdges(depth_tmp_gpu,_depth_gpu,_normal_gpu,_W,_H,angle_thres,_K(0,0),_K(1,1),_K(0,2),_K(1,2));
+  cuda_image_util::filter_dmap_smoothed_edges(depth_tmp_gpu,_depth_gpu,_normal_gpu,_W,_H,angle_thres,_K(0,0),_K(1,1),_K(0,2),_K(1,2));
   std::swap(depth_tmp_gpu, _depth_gpu);
   updateDepthCPU();
   cudaFree(depth_tmp_gpu);
