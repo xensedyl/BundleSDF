@@ -354,7 +354,8 @@ __global__ void filter_dmap_smoothed_edges_kernel(
     normal_dir = normalize(normal_dir);
 
     // Compute angle between view direction and normal
-    float dot = fminf(fmaxf(dot(view_dir, normal_dir), -1.0f), 1.0f); // Clamp for safety
+    float dot_val = view_dir.x * normal_dir.x + view_dir.y * normal_dir.y + view_dir.z * normal_dir.z;
+    float dot = fminf(fmaxf(dot_val, -1.0f), 1.0f); // Clamp for safety
     float angle = acosf(dot); // returns value in [0, pi]
 
     // Suppress depth on edges
