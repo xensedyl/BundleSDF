@@ -252,12 +252,12 @@ void Frame::processDepth()
   const float zfar = (*yml)["depth_processing"]["zfar"].as<float>();
 
   cuda_image_util::erode_depthmap(depth_tmp_gpu, _depth_gpu, erode_radius, _W,_H, erode_diff, erode_ratio, zfar);
-  cuda_image_util::gaussFilterDepthMap(_depth_gpu, depth_tmp_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
-  cuda_image_util::gaussFilterDepthMap(depth_tmp_gpu, _depth_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
+  cuda_image_util::Gaussian_filter_dmap(_depth_gpu, depth_tmp_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
+  cuda_image_util::Gaussian_filter_dmap(depth_tmp_gpu, _depth_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
   std::swap(depth_tmp_gpu,_depth_gpu);
 
-  // cuda_image_util::gaussFilterDepthMap(depth_tmp_gpu, _depth_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
-  // cuda_image_util::gaussFilterDepthMap(_depth_gpu, depth_tmp_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
+  // cuda_image_util::Gaussian_filter_dmap(depth_tmp_gpu, _depth_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
+  // cuda_image_util::Gaussian_filter_dmap(_depth_gpu, depth_tmp_gpu, bf_radius, sigma_D, sigma_R, _W, _H, zfar);
 
   updateDepthCPU();
 

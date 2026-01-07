@@ -185,13 +185,13 @@ __global__ void erode_depthmap_kernel(float* d_output, const float* d_input, int
 	}
 
 	unsigned int count = 0;
-	unsigned int sum = 0;
-	for (int i = -structureSize; i <= structureSize; i++)
+	unsigned int ksize = 2*structureSize+1;
+	for (int i = 0; i < ksize; i++)
 	{
-		for (int j = -structureSize; j <= structureSize; j++)
+		for (int j = 0; j < ksize; j++)
 		{
-			int nx = x + j;
-			int ny = y + i;
+			int nx = x + j - (ksize-1)/2;
+			int ny = y + i - (ksize-1)/2;
 			if (nx >= 0 && nx < width && ny >= 0 && ny < height)
 			{
 				float depth = d_input[ny * width + nx];
@@ -199,15 +199,12 @@ __global__ void erode_depthmap_kernel(float* d_output, const float* d_input, int
 				{
 					count++;
 				}
-				sum++;
 			}
 		}
 	}
-
-	if ((float)count / (float)sum >= fracReq)
-		d_output[y * width + x] = 0;
-	else
-		d_output[y * width + x] = centerDepth;
+	float filter = (float)count / (float)(ksize*ksize) - fracReq;
+	filter = filter > 0 ? 1.0f : 0.0f;
+	d_output[y * width + x] = centerDepth * filter;
 }
 
 void erode_depthmap(float* d_output, const float* d_input, int structureSize, unsigned int width, unsigned int height, float dThresh, float fracReq, float zfar)
@@ -228,78 +225,94 @@ void erode_depthmap(float* d_output, const float* d_input, int structureSize, un
 // Gauss Filter Depth Map
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void gaussFilterDepthMapDevice(float* d_output, const float* d_input, int radius, float sigmaD, float sigmaR, unsigned int width, unsigned int height, const float zfar)
+__global__ void Gaussian_filter_depth_map_kernel(
+    float* d_output, 
+    const float* d_input, 
+    int radius, 
+    float sigmaD, 
+    float sigmaR, 
+    unsigned int width, 
+    unsigned int height, 
+    const float zfar)
 {
-	const int x = blockIdx.x*blockDim.x + threadIdx.x;
-	const int y = blockIdx.y*blockDim.y + threadIdx.y;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (x >= width || y >= height) return;
+    if (x >= width || y >= height)
+        return;
 
-	const int kernelRadius = radius;
+    const int idx = y * width + x;
+    const int kernelSize = 2 * radius + 1;
 
-	d_output[y*width + x] = 0;
+    const float centerDepth = d_input[idx];
+    d_output[idx] = 0.0f;
 
-	const float depthCenter = d_input[y*width + x];
+    // Compute local mean depth in window (excluding invalid depths)
+    float mean_depth = 0.0f;
+    int valid_count = 0;
+    for (int ky = -radius; ky <= radius; ++ky) {
+        int ny = y + ky;
+        if (ny < 0 || ny >= height) continue;
+        for (int kx = -radius; kx <= radius; ++kx) {
+            int nx = x + kx;
+            if (nx < 0 || nx >= width) continue;
+            float d = d_input[ny * width + nx];
+            if (d >= 0.1f && d <= zfar) {
+                mean_depth += d;
+                ++valid_count;
+            }
+        }
+    }
+    if (valid_count == 0)
+        return;
+    mean_depth /= (float)valid_count;
 
-	float mean_depth = 0;
-	int num_valid = 0;
-	for (int m = x - kernelRadius; m <= x + kernelRadius; m++)
-	{
-		for (int n = y - kernelRadius; n <= y + kernelRadius; n++)
-		{
-			if (m >= 0 && n >= 0 && m < width && n < height)
-			{
-				const float currentDepth = d_input[n*width + m];
+    // Apply bilateral (gaussian & range) kernel using only values near local mean
+    float sum = 0.0f;
+    float weightSum = 0.0f;
+    for (int ky = -radius; ky <= radius; ++ky) {
+        int ny = y + ky;
+        if (ny < 0 || ny >= height) continue;
+        for (int kx = -radius; kx <= radius; ++kx) {
+            int nx = x + kx;
+            if (nx < 0 || nx >= width) continue;
+            float d = d_input[ny * width + nx];
+            if (d >= 0.1f && d <= zfar && fabsf(d - mean_depth) < 0.01f) {
+                float spatial = ((float)kx) * kx + ((float)ky) * ky;
+                float range = (centerDepth - d) * (centerDepth - d);
 
-				if (currentDepth>=0.1f && currentDepth<=zfar)
-				{
-					num_valid++;
-					mean_depth += currentDepth;
-				}
-			}
-		}
-	}
-	if (num_valid==0) return;
+                float weight = expf(-spatial / (2.0f * sigmaD * sigmaD) - range / (2.0f * sigmaR * sigmaR));
+                sum += d * weight;
+                weightSum += weight;
+            }
+        }
+    }
 
-	mean_depth /= num_valid;
-
-	float sum = 0.0f;
-	float sumWeight = 0.0f;
-	for (int m = x - kernelRadius; m <= x + kernelRadius; m++)
-	{
-		for (int n = y - kernelRadius; n <= y + kernelRadius; n++)
-		{
-			if (m >= 0 && n >= 0 && m < width && n < height)
-			{
-				const float currentDepth = d_input[n*width + m];
-
-				if (currentDepth>=0.1f && currentDepth<=zfar && abs(currentDepth-mean_depth)<0.01)
-				{
-					const float weight = exp( -((m-x)*(m-x) + (y-n)*(y-n)) / (2.0f*sigmaD*sigmaD) - (depthCenter-currentDepth)*(depthCenter-currentDepth)/(2*sigmaR*sigmaR) );
-
-					sumWeight += weight;
-					sum += weight*currentDepth;
-				}
-			}
-		}
-	}
-
-	float num_total = (2*kernelRadius+1)*(2*kernelRadius+1);
-	if (sumWeight > 0.0f && num_valid/num_total>0)
-	{
-		d_output[y*width + x] = sum / sumWeight;
-	}
+    float total_kernel = (float)(kernelSize * kernelSize);
+    if (weightSum > 0.0f && ((float)valid_count / total_kernel) > 0.0f) {
+        d_output[idx] = sum / weightSum;
+    }
 }
 
-void gaussFilterDepthMap(float* d_output, const float* d_input, int radius, float sigmaD, float sigmaR, unsigned int width, unsigned int height, const float zfar)
+void Gaussian_filter_dmap(
+    float* d_output, 
+    const float* d_input, 
+    int radius, 
+    float sigmaD, 
+    float sigmaR, 
+    unsigned int width, 
+    unsigned int height, 
+    const float zfar)
 {
-	const dim3 gridSize((width + T_PER_BLOCK - 1) / T_PER_BLOCK, (height + T_PER_BLOCK - 1) / T_PER_BLOCK);
-	const dim3 blockSize(T_PER_BLOCK, T_PER_BLOCK);
+    dim3 blockSize(T_PER_BLOCK, T_PER_BLOCK);
+    dim3 gridSize((width + T_PER_BLOCK - 1) / T_PER_BLOCK, 
+                  (height + T_PER_BLOCK - 1) / T_PER_BLOCK);
 
-	gaussFilterDepthMapDevice <<<gridSize, blockSize >>>(d_output, d_input, radius, sigmaD, sigmaR, width, height, zfar);
+    Gaussian_filter_depth_map_kernel<<<gridSize, blockSize>>>(d_output, d_input, radius, sigmaD, sigmaR, width, height, zfar);
+
 #ifdef DEBUG
-	cutilSafeCall(cudaDeviceSynchronize());
-	cutilCheckMsg(__FUNCTION__);
+    cutilSafeCall(cudaDeviceSynchronize());
+    cutilCheckMsg(__FUNCTION__);
 #endif
 }
 
