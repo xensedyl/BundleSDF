@@ -172,39 +172,45 @@ void compute_normals(float4* d_output, const float4* d_input, unsigned int width
 
 __global__ void erode_depthmap_kernel(float* d_output, const float* d_input, int structureSize, unsigned int width, unsigned int height, float dThresh, float fracReq, float zfar)
 {
-	const int x = blockIdx.x * blockDim.x + threadIdx.x;
-	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    const int x = blockIdx.x*blockDim.x + threadIdx.x;
+	const int y = blockIdx.y*blockDim.y + threadIdx.y;
 
-	if (x >= width || y >= height) return;
 
-	float centerDepth = d_input[y * width + x];
-	if (centerDepth <= 0.1f || centerDepth > zfar)
+	if (x >= 0 && x < width && y >= 0 && y < height)
 	{
-		d_output[y * width + x] = 0;
-		return;
-	}
 
-	unsigned int count = 0;
-	unsigned int ksize = 2*structureSize+1;
-	for (int i = 0; i < ksize; i++)
-	{
-		for (int j = 0; j < ksize; j++)
+
+		unsigned int count = 0;
+
+		float oldDepth = d_input[y*width + x];
+		if (oldDepth<=0.1f || oldDepth>zfar)
 		{
-			int nx = x + j - (ksize-1)/2;
-			int ny = y + i - (ksize-1)/2;
-			if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+			d_output[y*width + x] = 0;
+			return;
+		}
+        int target = (int)ceil((float)(2 * structureSize + 1)*(2 * structureSize + 1)*fracReq);
+		for (int i = -structureSize; i <= structureSize; i++)
+		{
+			for (int j = -structureSize; j <= structureSize; j++)
 			{
-				float depth = d_input[ny * width + nx];
-				if (depth == MINF || depth < 0.1f || fabsf(depth - centerDepth) > dThresh)
+				if (x + j >= 0 && x + j < width && y + i >= 0 && y + i < height)
 				{
-					count++;
+					float depth = d_input[(y + i)*width + (x + j)];
+					if (depth == MINF || depth < 0.1f || fabs(depth - oldDepth) > dThresh)
+					{
+						target--;
+					}
 				}
 			}
 		}
+
+		if (target<=0) {
+			d_output[y*width + x] = 0;
+		}
+		else {
+			d_output[y*width + x] = d_input[y*width + x];
+		}
 	}
-	float filter = (float)count / (float)(ksize*ksize) - fracReq;
-	filter = filter > 0 ? 1.0f : 0.0f;
-	d_output[y * width + x] = centerDepth * filter;
 }
 
 void erode_depthmap(float* d_output, const float* d_input, int structureSize, unsigned int width, unsigned int height, float dThresh, float fracReq, float zfar)
