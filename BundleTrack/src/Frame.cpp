@@ -173,9 +173,15 @@
        }
      }
    }
+   if ((*yml)["SPDLOG"].as<int>()>=1)
+   {
    pcl::io::savePLYFile(fmt::format("{}/cloud_init.ply", debug_dir), *cloud);
+   }
    Utils::outlierRemovalStatistic(cloud,cloud,3,30);
+   if ((*yml)["SPDLOG"].as<int>()>=1)
+   {
    pcl::io::savePLYFile(fmt::format("{}/cloud_for_init_coord.ply", debug_dir), *cloud);
+   }
    Eigen::MatrixXf mat = cloud->getMatrixXfMap();  // (D,N)
    Eigen::MatrixXf pts = mat.block(0,0,3,cloud->points.size());
    Eigen::Vector3f max_xyz = pts.rowwise().maxCoeff();

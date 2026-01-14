@@ -128,7 +128,6 @@ class GridEncoder(nn.Module):
             resolution = int(np.ceil(base_resolution * per_level_scale ** i))
             params_in_level = min(self.max_params, (resolution if align_corners else resolution + 1) ** input_dim) # limit max number
             params_in_level = int(np.ceil(params_in_level / 8) * 8) # make divisible
-            print(f"level {i}, resolution: {resolution}")
             offsets.append(offset)
             offset += params_in_level
         offsets.append(offset)
