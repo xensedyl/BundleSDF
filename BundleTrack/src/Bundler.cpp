@@ -823,7 +823,7 @@ void Bundler::saveNewframeResult()
     ff.close();
   }
 
-  if (!boost::filesystem::exists(pose_out_dir))
+  if (!boost::filesystem::exists(pose_out_dir) && ((*yml)["SPDLOG"].as<int>()>=1))
   {
     system(std::string("mkdir -p "+pose_out_dir).c_str());
     system(std::string("mkdir -p " + Utils::joinPath(debug_dir, "color")).c_str());
@@ -915,7 +915,7 @@ void Bundler::saveNewframeResult()
     }
   }
 
-  if ((*yml)["SPDLOG"].as<int>()>=1)
+  if ((*yml)["SPDLOG"].as<int>()>=0)
   {
     //////////// Save keyframe poses
     YAML::Node node;
