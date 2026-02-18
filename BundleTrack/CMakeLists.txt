@@ -57,6 +57,7 @@ add_definitions(-DPRINT_RESIDUALS_SPARSE=0)
 add_definitions(-DCUDA_RANSAC=1)
 add_definitions(-DCUDA_MATCHING=1)
 
+
 # RPATH settings
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
@@ -101,7 +102,6 @@ include_directories(
     ${CSPARSE_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/cuda/
-    ${PROJECT_SOURCE_DIR}/src/cuda/Solver/
     ${PROJECT_SOURCE_DIR}/src/Thirdparty
     ${PROJECT_SOURCE_DIR}/src/Thirdparty/g2o
 )
@@ -130,8 +130,8 @@ endif()
 file(GLOB MY_SRC 
     ${PROJECT_SOURCE_DIR}/src/*.cpp 
     ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp 
-    ${PROJECT_SOURCE_DIR}/src/cuda/Solver/*.cpp
 )
+
 
 file(GLOB G2O_LIBS ${PROJECT_SOURCE_DIR}/src/Thirdparty/g2o/lib/libg2o*)
 
@@ -142,8 +142,8 @@ list(REMOVE_ITEM PCL_LIBRARIES pcl_simulation)
 file(GLOB CUDA_FILES
     "${PROJECT_SOURCE_DIR}/src/*.cu"
     "${PROJECT_SOURCE_DIR}/src/cuda/*.cu"
-    "${PROJECT_SOURCE_DIR}/src/cuda/Solver/*.cu"
 )
+
 
 # Build CUDA library
 add_library(MY_CUDA_LIB SHARED ${CUDA_FILES})

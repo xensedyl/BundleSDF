@@ -35,7 +35,7 @@ PYBIND11_MODULE(my_cpp, m)
     })
     ;
 
-  m.def("computeCovisibility", &computeCovisibility);
+  m.def("compute_covisibility", &compute_covisibility);
   m.def("YamlLoadFile", [](const std::string& filename) -> std::shared_ptr<YAML::Node> {
     try {
       if (filename.empty()) {
@@ -222,7 +222,6 @@ PYBIND11_MODULE(my_cpp, m)
       }))
     .def("forgetFrame", &Bundler::forgetFrame, py::call_guard<py::gil_scoped_release>())
     .def("checkAndAddKeyframe", &Bundler::checkAndAddKeyframe, py::call_guard<py::gil_scoped_release>())
-    .def("optimizeGPU", &Bundler::optimizeGPU, py::call_guard<py::gil_scoped_release>())
     .def("selectKeyFramesForBA", &Bundler::selectKeyFramesForBA, py::call_guard<py::gil_scoped_release>())
     .def("saveNewframeResult", &Bundler::saveNewframeResult, py::call_guard<py::gil_scoped_release>())
     .def("saveFramesData", &Bundler::saveFramesData, py::call_guard<py::gil_scoped_release>())

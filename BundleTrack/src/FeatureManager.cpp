@@ -552,7 +552,7 @@ void SiftManager::findCorres(std::shared_ptr<Frame> frameA, std::shared_ptr<Fram
     if (frameA->_pose_in_model!=Eigen::Matrix4f::Identity())
     {
       // float rot_diff = Utils::rotationGeodesicDistanceIgnoreRotationAroundCamZ(frameA->_pose_in_model.block(0,0,3,3).transpose(), frameB->_pose_in_model.block(0,0,3,3).transpose());
-      float visible = computeCovisibility(frameA, frameB);
+      float visible = compute_covisibility(frameA, frameB);
       if (visible<(*yml)["bundle"]["non_neighbor_min_visible"].as<float>())
       {
         SPDLOG("frame {} and {} visible={} skip matching",frameA->_id_str,frameB->_id_str,visible);
@@ -799,7 +799,7 @@ void SiftManager::findCorresbyNNMultiPair(std::vector<FramePair> &pairs)
     auto &fA = pairs[i].first;
     auto &fB = pairs[i].second;
 
-    float visible = computeCovisibility(fA, fB);
+    float visible = compute_covisibility(fA, fB);
     SPDLOG("frame {} and {} visible={}",fA->_id_str,fB->_id_str,visible);
     if (visible<(*yml)["bundle"]["non_neighbor_min_visible"].as<float>())
     {
@@ -2793,7 +2793,7 @@ void GluNet::findCorresbyNNMultiPair(std::vector<FramePair> &pairs)
     //   SPDLOG("frame {} and {} rot_diff={} skip matching",fA->_id_str,fB->_id_str,rot_diff);
     //   continue;
     // }
-    float visible = computeCovisibility(fA, fB);
+    float visible = compute_covisibility(fA, fB);
     SPDLOG("frame {} and {} visible={}",fA->_id_str,fB->_id_str,visible);
     if (visible<(*yml)["bundle"]["non_neighbor_min_visible"].as<float>())
     {
