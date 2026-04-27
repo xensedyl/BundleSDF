@@ -1,7 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 #include <iostream>
-#include "cutil_math.h"
+#include <cuda_runtime.h>
+
+// Minimal vector-math helpers previously provided by NVIDIA's cutil_math.h.
+// Only the subset actually used in this codebase is kept here; the basic
+// make_floatN(x,y,z[,w]) constructors come from CUDA's <vector_functions.h>.
+inline __host__ __device__ float3 make_float3(float4 a)            { return make_float3(a.x, a.y, a.z); }
+inline __host__ __device__ float4 make_float4(float3 a, float w)   { return make_float4(a.x, a.y, a.z, w); }
+
+inline __host__ __device__ float3 operator-(const float3& a)               { return make_float3(-a.x, -a.y, -a.z); }
+inline __host__ __device__ float3 operator-(float3 a, float3 b)            { return make_float3(a.x - b.x, a.y - b.y, a.z - b.z); }
+inline __host__ __device__ float4 operator-(float4 a, float4 b)            { return make_float4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w); }
+inline __host__ __device__ float3 operator/(float3 a, float s)             { return make_float3(a.x / s, a.y / s, a.z / s); }
+
+inline __host__ __device__ float  dot(float3 a, float3 b)                  { return a.x * b.x + a.y * b.y + a.z * b.z; }
+inline __host__ __device__ float  dot(float4 a, float4 b)                  { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
+inline __host__ __device__ float  length(float3 a)                         { return sqrtf(dot(a, a)); }
+inline __host__ __device__ float  length(float4 a)                         { return sqrtf(dot(a, a)); }
+inline __host__ __device__ float3 cross(float3 a, float3 b)                { return make_float3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x); }
+inline __host__ __device__ float3 normalize(float3 a)                      { return a / length(a); }
 
 
 #if defined(__CUDA_ARCH__)

@@ -1,3 +1,10 @@
+# Originally from LoFTR (Detector-Free Local Feature Matching with Transformers)
+#   Copyright (c) ZJU3DV. Licensed under the Apache License, Version 2.0.
+#   See BundleTrack/LoFTR/LICENSE.
+#
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import torch,os,sys,time
 code_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f"{code_dir}/../../../scripts")

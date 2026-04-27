@@ -1,10 +1,10 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
+# Originally derived from BundleTrack
+#   Copyright (c) Rutgers University, 2021. All rights reserved.
+#   Authors: Bowen Wen, Kostas Bekris.
+#   Distributed under the BSD-style license shown in BundleTrack/LICENSE.
 #
-# NVIDIA CORPORATION and its licensors retain all intellectual property
-# and proprietary rights in and to this software, related documentation
-# and any modifications thereto.  Any use, reproduction, disclosure or
-# distribution of this software and related documentation without an express
-# license agreement from NVIDIA CORPORATION is strictly prohibited.
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 
 
 import pickle,glob,cv2,imageio,os,sys,pdb,re,json,trimesh,copy,pdb,logging,multiprocessing,subprocess,joblib

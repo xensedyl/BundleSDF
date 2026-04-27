@@ -1,3 +1,9 @@
+# Originally from LoFTR (Detector-Free Local Feature Matching with Transformers)
+#   Copyright (c) ZJU3DV. Licensed under the Apache License, Version 2.0.
+#   See BundleTrack/LoFTR/LICENSE.
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Linear Transformer proposed in "Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention"
 Modified from: https://github.com/idiap/fast-transformers/blob/master/fast_transformers/attention/linear_attention.py

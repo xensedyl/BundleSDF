@@ -1,0 +1,70 @@
+BundleSDF
+Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+This product is licensed under the Apache License, Version 2.0 (see the
+LICENSE.txt file in the root of this source tree for full terms).
+
+This product includes software developed at
+NVIDIA CORPORATION & AFFILIATES.
+
+This product also bundles third-party software components. Each component
+is governed by its own license; the full text of each license is provided
+at the location indicated below. Recipients redistributing this product
+must retain the attributions in this NOTICE file in accordance with
+Section 4(d) of the Apache License, Version 2.0.
+
+================================================================================
+Third-Party Software Notices
+================================================================================
+
+--------------------------------------------------------------------------------
+BundleTrack
+  Path:       BundleTrack/
+  License:    BSD-style 3-clause
+  License at: BundleTrack/LICENSE
+  Copyright (c) Rutgers University, 2021. All rights reserved.
+  Authors:    Bowen Wen, Kostas Bekris.
+  Reference:  Bowen Wen and Kostas Bekris, "BundleTrack: 6D Pose Tracking
+              for Novel Objects without Instance or Category-Level 3D
+              Models," IEEE/RSJ International Conference on Intelligent
+              Robots and Systems (IROS), 2021.
+
+--------------------------------------------------------------------------------
+LoFTR (Detector-Free Local Feature Matching with Transformers)
+  Path:       BundleTrack/LoFTR/
+  License:    Apache License, Version 2.0
+  License at: BundleTrack/LoFTR/LICENSE
+  Copyright (c) ZJU3DV.
+  Reference:  Sun et al., "LoFTR: Detector-Free Local Feature Matching with
+              Transformers," CVPR 2021.
+
+--------------------------------------------------------------------------------
+torch-ngp grid encoder
+  Path:       mycuda/torch_ngp_grid_encoder/
+  License:    MIT License
+  License at: mycuda/torch_ngp_grid_encoder/LICENSE
+  Copyright (c) 2022 hawkey.
+
+--------------------------------------------------------------------------------
+spdlog
+  Path:       BundleTrack/src/spdlog/
+  License:    MIT License (see in-source headers)
+  Copyright (c) 2015-2018 Gabi Melman.
+
+--------------------------------------------------------------------------------
+{fmt}
+  Path:       BundleTrack/src/fmt/
+              BundleTrack/src/spdlog/fmt/bundled/
+  License:    MIT License (see in-source headers)
+  Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors.
+
+--------------------------------------------------------------------------------
+CUDA RANSAC (Nghia Ho)
+  Path:       BundleTrack/src/cuda/cuda_ransac.h
+              BundleTrack/src/cuda/cuda_ransac.cu
+  License:    2-clause BSD License (see in-source header in cuda_ransac.h)
+  Copyright (c) 2011 Nghia Ho. All rights reserved.
+
+================================================================================
+End of Third-Party Software Notices
+================================================================================
