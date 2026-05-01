@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <cuda_runtime.h>
+#include <cmath>
 
 // Minimal vector-math helpers previously provided by NVIDIA's cutil_math.h.
 // Only the subset actually used in this codebase is kept here; the basic
@@ -1303,8 +1304,9 @@ class matNxM
 		inline __device__ __host__ void setIdentity()
 		{
 			setZero();
+			constexpr unsigned int diag = (N < M) ? N : M;
 			__CONDITIONAL_UNROLL__
-			for(unsigned int i = 0; i<(unsigned int)min(N, M); i++) entries2D[i][i] = 1.0f;
+			for(unsigned int i = 0; i<diag; i++) entries2D[i][i] = 1.0f;
 		}
 
 		static inline __device__ __host__ matNxM<N, M> getIdentity()
@@ -1315,8 +1317,9 @@ class matNxM
 
 		inline __device__ __host__  void setDiagonalMatrix(const matNxM<N, 1>& v) {
 			setZero();
+			constexpr unsigned int diag = (N < M) ? N : M;
 			__CONDITIONAL_UNROLL__
-				for (unsigned int i = 0; i < (unsigned int)min(N, M); i++) {
+				for (unsigned int i = 0; i < diag; i++) {
 					entries2D[i][i] = v(i, 0);
 				}
 		}
@@ -1776,6 +1779,6 @@ inline __device__ float rotationGeodesicDistance(const float3x3 &R1, const float
 {
   float tmp = ((R1 * R2.getTranspose()).trace()-1) / 2.0;
 	// printf("rotationGeodesicDistance tmp: %f\n", tmp);
-  tmp = max(min(1.0f, tmp), -1.0f);
-  return acos(tmp);
+  tmp = fmaxf(fminf(1.0f, tmp), -1.0f);
+  return acosf(tmp);
 }
