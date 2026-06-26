@@ -10,9 +10,42 @@
 from bundlesdf import *
 import argparse
 import os,sys
+from scipy import ndimage
 code_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(code_dir)
 from segmentation_utils import Segmenter
+
+
+def resize_nearest(arr, height, width):
+  """Pure NumPy nearest-neighbor resize for 2D/3D arrays."""
+  arr = np.asarray(arr)
+  in_h, in_w = arr.shape[:2]
+  if (in_h, in_w) == (height, width):
+    return arr
+
+  y_idx = np.minimum((np.arange(height) * in_h / height).astype(np.int64), in_h - 1)
+  x_idx = np.minimum((np.arange(width) * in_w / width).astype(np.int64), in_w - 1)
+
+  if arr.ndim == 2:
+    return arr[y_idx[:, None], x_idx[None, :]]
+  return arr[y_idx[:, None], x_idx[None, :], :]
+
+
+def normalize_mask(mask, height, width):
+  """Convert arbitrary mask formats to contiguous binary uint8 [H, W]."""
+  if mask is None:
+    raise ValueError("Mask is None. Check whether the mask file exists and is readable.")
+
+  mask = np.asarray(mask)
+  if mask.shape[:2] != (height, width):
+    mask = resize_nearest(mask, height, width)
+
+  if mask.ndim == 3:
+    mask = np.any(mask > 0, axis=-1)
+  else:
+    mask = mask > 0
+
+  return np.ascontiguousarray(mask.astype(np.uint8))
 
 
 def run_one_video(video_dir='/home/bowen/debug/2022-11-18-15-10-24_milk', out_folder='/home/bowen/debug/bundlesdf_2022-11-18-15-10-24_milk/', use_segmenter=False, use_gui=False):
@@ -80,7 +113,6 @@ def run_one_video(video_dir='/home/bowen/debug/2022-11-18-15-10-24_milk', out_fo
 
     if i==0:
       mask = reader.get_mask(0)
-      mask = cv2.resize(mask, (W,H), interpolation=cv2.INTER_NEAREST)
       if use_segmenter:
         mask = segmenter.run(color_file.replace('rgb','masks'))
     else:
@@ -88,11 +120,12 @@ def run_one_video(video_dir='/home/bowen/debug/2022-11-18-15-10-24_milk', out_fo
         mask = segmenter.run(color_file.replace('rgb','masks'))
       else:
         mask = reader.get_mask(i)
-        mask = cv2.resize(mask, (W,H), interpolation=cv2.INTER_NEAREST)
+
+    mask = normalize_mask(mask, H, W)
 
     if cfg_bundletrack['erode_mask']>0:
-      kernel = np.ones((cfg_bundletrack['erode_mask'], cfg_bundletrack['erode_mask']), np.uint8)
-      mask = cv2.erode(mask.astype(np.uint8), kernel)
+      kernel = np.ones((cfg_bundletrack['erode_mask'], cfg_bundletrack['erode_mask']), dtype=bool)
+      mask = ndimage.binary_erosion(mask > 0, structure=kernel).astype(np.uint8)
 
     id_str = reader.id_strs[i]
     pose_in_model = np.eye(4)

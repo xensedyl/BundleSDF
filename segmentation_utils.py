@@ -15,4 +15,13 @@ class Segmenter():
         return
 
     def run(self, mask_file=None):
-        return (cv2.imread(mask_file, -1)>0).astype(np.uint8)
+        mask = cv2.imread(mask_file, -1)
+        if mask is None:
+            raise FileNotFoundError(f"Cannot read mask file: {mask_file}")
+
+        if mask.ndim == 3:
+            mask = np.any(mask > 0, axis=-1)
+        else:
+            mask = mask > 0
+
+        return np.ascontiguousarray(mask.astype(np.uint8))
